@@ -6,7 +6,7 @@ FAST SIMPLEX 2D - Local Coordinate System for Simplex Inference
 EDA Team: Gemini · Claude · Alex
 License: MIT
 Version: 1.0
-Trad.: GLM
+Trans.: GLM
 
 ================================================================================
 ALGORITHM:
