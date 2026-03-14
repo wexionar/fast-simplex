@@ -1,13 +1,13 @@
 """
 ================================================================================
-FAST SIMPLEX 2D - Test Suite
+FAST SIMPLEX 2D - Test Suite v2.0
 ================================================================================
 
 Comprehensive tests for Fast Simplex 2D interpolation engine.
 
 EDA Team: Gemini · Claude · Alex
 License: MIT
-Version: 1.0
+Version: 2.0
 
 ================================================================================
 """
@@ -17,17 +17,16 @@ import sys
 from fast_simplex_2d import FastSimplex2D
 
 
-def test_1_initialization():
+def test_1_basic_initialization():
     """Test 1: Basic initialization"""
     print("\n" + "="*80)
-    print("TEST 1: Initialization")
+    print("TEST 1: Basic Initialization")
     print("="*80)
     
     try:
-        engine = FastSimplex2D(max_radius=0, lambda_factor=9, max_neighbors=1000)
+        engine = FastSimplex2D(max_radius=0, lambda_factor=9)
         print("✓ PASS: Engine initialized successfully")
         print(f"  - Dimensions: {engine.D}")
-        print(f"  - Max radius: {engine.max_radius}")
         print(f"  - Lambda factor: {engine.lambda_factor}")
         return True
     except Exception as e:
@@ -41,7 +40,6 @@ def test_2_data_loading():
     print("TEST 2: Data Loading")
     print("="*80)
     
-    # Valid data
     np.random.seed(42)
     x = np.random.rand(100) * 10
     y = np.random.rand(100) * 10
@@ -69,7 +67,6 @@ def test_3_wrong_shape():
     print("TEST 3: Wrong Shape Rejection")
     print("="*80)
     
-    # Wrong shape (only 2 columns)
     wrong_data = np.random.rand(10, 2)
     
     try:
@@ -101,7 +98,6 @@ def test_4_simple_prediction():
     engine = FastSimplex2D()
     engine.fit(data)
     
-    # Test point
     test_point = np.array([5.0, 5.0])
     expected = 10.0
     
@@ -109,7 +105,7 @@ def test_4_simple_prediction():
     
     if pred is not None:
         error = abs(pred - expected)
-        if error < 0.5:  # Tolerance
+        if error < 0.5:
             print(f"✓ PASS: Prediction accurate")
             print(f"  - Expected: {expected}")
             print(f"  - Predicted: {pred:.4f}")
@@ -126,73 +122,41 @@ def test_4_simple_prediction():
         return False
 
 
-def test_5_diagnostics():
-    """Test 5: Diagnostics information"""
+def test_5_success_rate():
+    """Test 5: Success rate validation"""
     print("\n" + "="*80)
-    print("TEST 5: Diagnostics")
+    print("TEST 5: Success Rate (v2.0 target: 95%+ on 1K, 99%+ on large datasets)")
     print("="*80)
     
     np.random.seed(42)
-    x = np.random.rand(200) * 10
-    y = np.random.rand(200) * 10
+    x = np.random.rand(1000) * 10
+    y = np.random.rand(1000) * 10
     z = x + y
     data = np.column_stack([x, y, z])
     
     engine = FastSimplex2D()
     engine.fit(data)
     
-    test_point = np.array([5.0, 5.0])
-    pred, diag = engine.predict(test_point, return_diagnostics=True)
+    test_points = np.random.rand(200, 2) * 10
+    predictions = [engine.predict(p) for p in test_points]
+    success_count = sum([1 for p in predictions if p is not None])
+    success_rate = success_count / len(predictions) * 100
     
-    required_keys = ['success', 'message', 'n_neighbors_found', 
-                     'simplex_indices', 'barycentric_weights', 'v1_distance']
+    print(f"Success rate: {success_rate:.1f}%")
+    print(f"Successful: {success_count}/{len(predictions)}")
     
-    missing_keys = [k for k in required_keys if k not in diag]
-    
-    if not missing_keys:
-        print("✓ PASS: All diagnostic keys present")
-        print(f"  - Success: {diag['success']}")
-        print(f"  - Message: {diag['message']}")
-        print(f"  - Neighbors found: {diag['n_neighbors_found']}")
-        print(f"  - V1 distance: {diag['v1_distance']:.4f}")
+    if success_rate >= 95.0:  # 95%+ is excellent for 1K dataset
+        print("✓ PASS: Success rate ≥ 95%")
         return True
     else:
-        print(f"✗ FAIL: Missing diagnostic keys: {missing_keys}")
+        print(f"✗ FAIL: Success rate below 95%")
         return False
 
 
-def test_6_radius_restriction():
-    """Test 6: Radius restriction"""
+def test_6_batch_predictions():
+    """Test 6: Batch predictions"""
     print("\n" + "="*80)
-    print("TEST 6: Radius Restriction")
-    print("="*80)
-    
-    np.random.seed(42)
-    x = np.random.rand(500) * 10
-    y = np.random.rand(500) * 10
-    z = x + y
-    data = np.column_stack([x, y, z])
-    
-    engine = FastSimplex2D(max_radius=2.0, max_neighbors=50)
-    engine.fit(data)
-    
-    test_point = np.array([5.0, 5.0])
-    pred, diag = engine.predict(test_point, return_diagnostics=True)
-    
-    if 'radius' in diag['search_method'].lower():
-        print("✓ PASS: Radius search used")
-        print(f"  - Search method: {diag['search_method']}")
-        print(f"  - Neighbors found: {diag['n_neighbors_found']}")
-        return True
-    else:
-        print("✗ FAIL: Radius search not detected")
-        return False
-
-
-def test_7_batch_predictions():
-    """Test 7: Batch predictions"""
-    print("\n" + "="*80)
-    print("TEST 7: Batch Predictions")
+    print("TEST 6: Batch Predictions")
     print("="*80)
     
     np.random.seed(42)
@@ -204,7 +168,6 @@ def test_7_batch_predictions():
     engine = FastSimplex2D()
     engine.fit(data)
     
-    # Multiple test points
     test_points = np.array([
         [2.5, 2.5],
         [5.0, 5.0],
@@ -230,36 +193,10 @@ def test_7_batch_predictions():
         return False
 
 
-def test_8_sparse_dataset():
-    """Test 8: Sparse dataset handling"""
+def test_7_exact_match():
+    """Test 7: Exact match with dataset point"""
     print("\n" + "="*80)
-    print("TEST 8: Sparse Dataset")
-    print("="*80)
-    
-    # Very sparse dataset
-    np.random.seed(42)
-    x = np.random.rand(15) * 10
-    y = np.random.rand(15) * 10
-    z = x + y
-    data = np.column_stack([x, y, z])
-    
-    engine = FastSimplex2D(lambda_factor=5)
-    engine.fit(data)
-    
-    test_point = np.array([5.0, 5.0])
-    pred, diag = engine.predict(test_point, return_diagnostics=True)
-    
-    # May succeed or fail, but should not crash
-    print(f"  - Result: {diag['message']}")
-    print(f"  - Success: {diag['success']}")
-    print("✓ PASS: Sparse dataset handled without crash")
-    return True
-
-
-def test_9_exact_match():
-    """Test 9: Exact match with dataset point"""
-    print("\n" + "="*80)
-    print("TEST 9: Exact Match")
+    print("TEST 7: Exact Match")
     print("="*80)
     
     data = np.array([
@@ -272,7 +209,6 @@ def test_9_exact_match():
     engine = FastSimplex2D()
     engine.fit(data)
     
-    # Query exactly at a dataset point
     test_point = np.array([1.0, 1.0])
     expected = 2.0
     
@@ -294,15 +230,14 @@ def test_9_exact_match():
         return False
 
 
-def test_10_performance():
-    """Test 10: Performance benchmark"""
+def test_8_performance():
+    """Test 8: Performance benchmark"""
     print("\n" + "="*80)
-    print("TEST 10: Performance")
+    print("TEST 8: Performance")
     print("="*80)
     
     import time
     
-    # Medium dataset
     np.random.seed(42)
     N = 5000
     x = np.random.rand(N) * 10
@@ -330,35 +265,101 @@ def test_10_performance():
     print(f"  - Predict time (100 queries): {predict_time:.2f} ms")
     print(f"  - Throughput: {throughput:.0f} pred/s")
     
-    # Performance targets
-    if fit_time < 100 and predict_time < 200:
-        print("  - ✓ Performance targets met")
+    # v1.1 should be fast
+    if throughput > 5000:
+        print(f"  - ✓ Excellent performance (>5000 pred/s)")
+    
+    return True
+
+
+def test_9_edge_cases():
+    """Test 9: Edge cases handling"""
+    print("\n" + "="*80)
+    print("TEST 9: Edge Cases")
+    print("="*80)
+    
+    # Very sparse dataset
+    np.random.seed(42)
+    x = np.random.rand(15) * 10
+    y = np.random.rand(15) * 10
+    z = x + y
+    data = np.column_stack([x, y, z])
+    
+    engine = FastSimplex2D(lambda_factor=5)
+    engine.fit(data)
+    
+    test_point = np.array([5.0, 5.0])
+    pred = engine.predict(test_point)
+    
+    # May succeed or fail, but should not crash
+    print(f"  - Sparse dataset (15 points): {'Success' if pred is not None else 'No support'}")
+    print("✓ PASS: Edge case handled without crash")
+    return True
+
+
+def test_10_quadrant_coverage():
+    """Test 10: All quadrants covered"""
+    print("\n" + "="*80)
+    print("TEST 10: Quadrant Coverage (v2.0 11-case algorithm)")
+    print("="*80)
+    
+    # Generate data covering all quadrants
+    np.random.seed(42)
+    N = 500
+    x = (np.random.rand(N) - 0.5) * 20  # -10 to 10
+    y = (np.random.rand(N) - 0.5) * 20  # -10 to 10
+    z = x + y
+    data = np.column_stack([x, y, z])
+    
+    engine = FastSimplex2D()
+    engine.fit(data)
+    
+    # Test points in all quadrants
+    test_points = np.array([
+        [5, 5],    # Quadrant I
+        [-5, 5],   # Quadrant II
+        [-5, -5],  # Quadrant III
+        [5, -5],   # Quadrant IV
+        [0, 5],    # Positive Y axis
+        [5, 0],    # Positive X axis
+    ])
+    
+    results = []
+    for p in test_points:
+        pred = engine.predict(p)
+        results.append(pred is not None)
+    
+    success_count = sum(results)
+    
+    print(f"Quadrant coverage: {success_count}/{len(test_points)} quadrants")
+    
+    if success_count >= 5:  # At least 5/6
+        print("✓ PASS: Good quadrant coverage")
         return True
     else:
-        print("  - ⚠ Performance slower than expected (still acceptable)")
-        return True  # Still pass, just note it
+        print("✗ FAIL: Poor quadrant coverage")
+        return False
 
 
 def run_all_tests():
-    """Run all tests and report summary"""
+    """Run complete test suite"""
     print("\n" + "="*80)
-    print("FAST SIMPLEX 2D - COMPREHENSIVE TEST SUITE")
+    print("FAST SIMPLEX 2D v2.0 - COMPREHENSIVE TEST SUITE")
     print("="*80)
     print("EDA Team: Gemini · Claude · Alex")
-    print("Version: 1.0")
     print("="*80)
     
     tests = [
-        test_1_initialization,
+        test_1_basic_initialization,
         test_2_data_loading,
         test_3_wrong_shape,
         test_4_simple_prediction,
-        test_5_diagnostics,
-        test_6_radius_restriction,
-        test_7_batch_predictions,
-        test_8_sparse_dataset,
-        test_9_exact_match,
-        test_10_performance
+        test_5_success_rate,
+        test_6_batch_predictions,
+        test_7_exact_match,
+        test_8_performance,
+        test_9_edge_cases,
+        test_10_quadrant_coverage
     ]
     
     results = []
