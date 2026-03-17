@@ -5,7 +5,7 @@ FAST SIMPLEX 3D - Inference Engine
 
 EDA Team: Gemini · Claude · Alex
 License: MIT
-Version: 1.0c
+Version: 1.0d
 
 ================================================================================
 """
